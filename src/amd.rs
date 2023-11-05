@@ -4,7 +4,7 @@ use sev::certs::snp::Certificate;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::console;
-use web_sys::{Blob, Request, RequestInit, RequestMode, Response};
+use web_sys::{Blob, Request, RequestInit, RequestMode, Response, Storage};
 
 const KDS_CERT_SITE: &str = "https://kdsintf.amd.com";
 #[allow(dead_code)]
@@ -65,11 +65,25 @@ pub async fn fetch_kds_vcek_der(
 ) -> Result<Certificate, JsValue> {
     let url = get_kds_vcek_der_url(product_name, chip_id, boot_loader, tee, snp, microcode);
 
-    let cert_array_buffer = fetch_blob(url)
+    // check the cache
+    let window = web_sys::window().expect("Could not get web_sys::window");
+    let local_storage = window
+        .local_storage()?
+        .expect("Could not get local storage");
+    if let Ok(Some(value)) = local_storage.get_item(&url) {
+        let decoded = hex::decode(value).expect("Could not decode cert chain from cache");
+        return Certificate::from_der(&decoded).map_err(|e| e.to_string().into());
+    }
+
+    let cert_array_buffer = fetch_blob(url.clone())
         .await
         .expect("Could not get cert chain from KDS");
 
     let cert_vec = js_sys::Uint8Array::new(&cert_array_buffer).to_vec();
+
+    // store in cache
+    local_storage.set_item(&url, &hex::encode(&cert_vec))?;
+
     Certificate::from_der(&cert_vec).map_err(|e| e.to_string().into())
 }
 

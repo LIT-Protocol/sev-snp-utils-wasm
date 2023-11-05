@@ -3,7 +3,7 @@ mod utils;
 
 use wasm_bindgen::prelude::*;
 
-use sev::certs::snp::{builtin::milan, ca, Certificate, Chain, Verifiable};
+use sev::certs::snp::{builtin::milan, ca, Chain, Verifiable};
 use sev::firmware::guest::AttestationReport;
 use web_sys::console;
 
@@ -15,6 +15,7 @@ extern "C" {
 #[wasm_bindgen]
 pub async fn verify_attestation_report(attestation_report: JsValue) -> Result<(), JsValue> {
     console::log_1(&"Checking attestation report...".into());
+
     utils::set_panic_hook();
 
     let uint8_report = js_sys::Uint8Array::new(&attestation_report);
