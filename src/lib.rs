@@ -52,7 +52,12 @@ pub async fn verify_attestation_report(attestation_report: JsValue) -> Result<()
 
     let chain = Chain { ca, vcek };
 
-    let _ = (&chain, &report).verify();
+    let verified = (&chain, &report).verify();
+    if let Err(e) = verified {
+        console::log_1(&"Verification failed".into());
+        console::log_1(&e.to_string().into());
+        return Err(e.to_string().into());
+    }
     alert("Hello, sev-snp-utils-wasm!");
     Ok(())
 }
