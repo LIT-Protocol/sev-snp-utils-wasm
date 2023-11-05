@@ -69,13 +69,16 @@ pub async fn fetch_kds_vcek_der(
         .expect("Could not get cert chain from KDS");
 
     let cert_vec = js_sys::Uint8Array::new(&cert_array_buffer).to_vec();
-    Certificate::from_pem(&cert_vec).map_err(|e| e.to_string().into())
+    Certificate::from_der(&cert_vec).map_err(|e| e.to_string().into())
 }
 
 pub async fn fetch_blob(url: String) -> Result<ArrayBuffer, JsValue> {
     let mut opts = RequestInit::new();
     opts.method("GET");
-    opts.mode(RequestMode::NoCors);
+    opts.mode(RequestMode::Cors);
+
+    let cors_proxy = "https://shielded-earth-13917-10ba15245911.herokuapp.com/";
+    let url = format!("{}{}", cors_proxy, url);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
