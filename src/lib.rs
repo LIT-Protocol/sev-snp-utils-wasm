@@ -12,14 +12,10 @@ extern "C" {
     fn alert(s: &str);
 }
 
-pub(crate) fn fmt_bin_vec_to_hex(vec: &Vec<u8>) -> String {
-    vec.iter().map(|b| format!("{:02x}", b)).collect::<String>()
-}
-
 #[wasm_bindgen]
 pub async fn verify_attestation_report(attestation_report: JsValue) -> Result<(), JsValue> {
     console::log_1(&"Checking attestation report...".into());
-    console_error_panic_hook::set_once();
+    utils::set_panic_hook();
 
     let uint8_report = js_sys::Uint8Array::new(&attestation_report);
     let report_bytes = uint8_report.to_vec();
@@ -39,7 +35,7 @@ pub async fn verify_attestation_report(attestation_report: JsValue) -> Result<()
     // let vcek = Certificate::from_der(TEST_MILAN_VCEK_DER).unwrap();
     let vcek = amd::fetch_kds_vcek_der(
         "Milan",
-        &fmt_bin_vec_to_hex(&report.chip_id.to_vec()),
+        &utils::fmt_bin_vec_to_hex(&report.chip_id.to_vec()),
         report.reported_tcb.bootloader,
         report.reported_tcb.tee,
         report.reported_tcb.snp,

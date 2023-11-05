@@ -1,3 +1,4 @@
+use crate::utils::fmt_bin_vec_to_hex;
 use js_sys::ArrayBuffer;
 use sev::certs::snp::Certificate;
 use wasm_bindgen::prelude::*;

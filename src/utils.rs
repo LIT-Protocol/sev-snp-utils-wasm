@@ -8,3 +8,7 @@ pub fn set_panic_hook() {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 }
+
+pub(crate) fn fmt_bin_vec_to_hex(vec: &Vec<u8>) -> String {
+    vec.iter().map(|b| format!("{:02x}", b)).collect::<String>()
+}
