@@ -6,12 +6,12 @@ use wasm_bindgen::prelude::*;
 
 use sev::certs::snp::{builtin::milan, ca, Chain, Verifiable};
 use sev::firmware::guest::AttestationReport;
-use web_sys::console;
+// use web_sys::console;
 
 #[wasm_bindgen]
 #[doc = "Parses and returns the parsed attestation report"]
 pub fn parse_attestation_report(attestation_report: &str) -> Result<JsValue, JsValue> {
-    console::log_1(&"Parsing attestation report...".into());
+    // console::log_1(&"Parsing attestation report...".into());
     utils::set_panic_hook();
 
     let report_bytes = base64_decode(attestation_report);
@@ -45,6 +45,10 @@ pub async fn verify_attestation_report(attestation_report: &str) -> Result<(), J
     // console::log_1(&"Checking attestation report...".into());
     utils::set_panic_hook();
 
+    verify_attestation_report_inner(attestation_report).await
+}
+
+pub async fn verify_attestation_report_inner(attestation_report: &str) -> Result<(), JsValue> {
     let report_bytes = base64_decode(attestation_report);
     let report: AttestationReport = unsafe { std::ptr::read(report_bytes.as_ptr() as *const _) };
 
@@ -70,8 +74,8 @@ pub async fn verify_attestation_report(attestation_report: &str) -> Result<(), J
 
     let verified = (&chain, &report).verify();
     if let Err(e) = verified {
-        console::log_1(&"Verification failed".into());
-        console::log_1(&e.to_string().into());
+        // console::log_1(&"Verification failed".into());
+        // console::log_1(&e.to_string().into());
         return Err(e.to_string().into());
     }
     Ok(())
