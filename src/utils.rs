@@ -18,7 +18,7 @@ pub(crate) fn fmt_bin_vec_to_hex(vec: &Vec<u8>) -> String {
     vec.iter().map(|b| format!("{:02x}", b)).collect::<String>()
 }
 
-pub fn hash_report_data(data: JsValue, signatures: JsValue, challenge: &str) -> [u8; 64] {
+pub fn hash_to_get_report_data(data: JsValue, signatures: JsValue, challenge: &str) -> [u8; 64] {
     let noonce = <[u8; 32]>::from_hex(challenge).expect("Could not convert challenge to bytes");
 
     let mut hasher = Sha512::new();

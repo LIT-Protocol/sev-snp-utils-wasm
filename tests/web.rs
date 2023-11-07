@@ -6,11 +6,39 @@ mod constants;
 
 extern crate wasm_bindgen_test;
 
-use constants::{BAD_SIG_REPORT, CORRUPT_REPORT, VALID_REPORT, VALID_REPORT_VCEK_URL};
-use sev_snp_utils_wasm::{get_vcek_url, parse_attestation_report, verify_attestation_report};
+use constants::{
+    BAD_SIG_REPORT, CORRUPT_REPORT, VALID_ATTESTATION_JSON_CHALLENGE_SENT,
+    VALID_ATTESTATION_JSON_RESPONSE, VALID_REPORT, VALID_REPORT_VCEK_URL,
+};
+use sev_snp_utils_wasm::{
+    get_vcek_url, parse_attestation_report, verify_attestation_report,
+    verify_attestation_report_and_check_challenge,
+};
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
+
+#[wasm_bindgen_test]
+async fn test_verify_real_attestation_report_and_check_challenge() {
+    // parse json response
+    let parsed_response_jsval = js_sys::JSON::parse(VALID_ATTESTATION_JSON_RESPONSE).unwrap();
+    let parsed_response = js_sys::Object::from(parsed_response_jsval);
+
+    let report =
+        js_sys::Reflect::get(&parsed_response, &"report".into()).expect("Could not get report");
+    let data = js_sys::Reflect::get(&parsed_response, &"data".into()).expect("Could not get data");
+    let signatures = js_sys::Reflect::get(&parsed_response, &"signatures".into())
+        .expect("Could not get signatures");
+
+    let result = verify_attestation_report_and_check_challenge(
+        &report.as_string().expect("Could not get report"),
+        data,
+        signatures,
+        VALID_ATTESTATION_JSON_CHALLENGE_SENT,
+    )
+    .await;
+    assert!(result.is_ok());
+}
 
 #[wasm_bindgen_test]
 async fn test_verify_real_attestation_report() {

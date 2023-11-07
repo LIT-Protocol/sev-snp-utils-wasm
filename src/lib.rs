@@ -63,7 +63,7 @@ pub async fn verify_attestation_report_and_check_challenge(
 
     // report_data is a 64 byte field that can be anything - we use a hash of a bunch of stuff
     let report_data_from_report = report.report_data;
-    let report_data_from_hashing = utils::hash_report_data(data, signatures, challenge);
+    let report_data_from_hashing = utils::hash_to_get_report_data(data, signatures, challenge);
     if report_data_from_report != report_data_from_hashing {
         return Err("Report data does not match.  This generally indicates that the data, challenge/nonce, or signatures are bad".into());
     }
