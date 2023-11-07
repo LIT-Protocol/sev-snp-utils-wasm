@@ -48,6 +48,29 @@ pub async fn verify_attestation_report(attestation_report: &str) -> Result<(), J
     verify_attestation_report_inner(attestation_report).await
 }
 
+#[wasm_bindgen]
+pub async fn verify_attestation_report_and_check_challenge(
+    attestation_report: &str,
+    data: JsValue,
+    signatures: JsValue,
+    challenge: &str,
+) -> Result<(), JsValue> {
+    // console::log_1(&"Checking attestation report...".into());
+    utils::set_panic_hook();
+
+    let report_bytes = base64_decode(attestation_report);
+    let report: AttestationReport = unsafe { std::ptr::read(report_bytes.as_ptr() as *const _) };
+
+    // report_data is a 64 byte field that can be anything - we use a hash of a bunch of stuff
+    let report_data_from_report = report.report_data;
+    let report_data_from_hashing = utils::hash_report_data(data, signatures, challenge);
+    if report_data_from_report != report_data_from_hashing {
+        return Err("Report data does not match.  This generally indicates that the data, challenge/nonce, or signatures are bad".into());
+    }
+
+    verify_attestation_report_inner(attestation_report).await
+}
+
 pub async fn verify_attestation_report_inner(attestation_report: &str) -> Result<(), JsValue> {
     let report_bytes = base64_decode(attestation_report);
     let report: AttestationReport = unsafe { std::ptr::read(report_bytes.as_ptr() as *const _) };

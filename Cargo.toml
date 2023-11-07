@@ -26,6 +26,8 @@ wasm-bindgen-futures = "0.4.38"
 js-sys = "0.3.65"
 base64_light = "0.1"
 byteorder = "1.5.0"
+hex = "0.4.3"
+sha2 = "0.10.8"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
