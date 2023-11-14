@@ -2,6 +2,7 @@ mod amd;
 mod utils;
 
 use base64_light::base64_decode;
+use sev::certs::snp::Certificate;
 use wasm_bindgen::prelude::*;
 
 use sev::certs::snp::{builtin::milan, ca, Chain, Verifiable};
@@ -20,7 +21,7 @@ pub fn parse_attestation_report(attestation_report: &str) -> Result<JsValue, JsV
 }
 
 #[wasm_bindgen]
-#[doc = "Gets the vcek url for the given attestation report.  You can fetch this certificate yourself, and if you put it into LocalStorage with the url as the key and the response body as base64 encoded value, then the next time you call verify_attestation_report it will use the cached value instead of fetching it again."]
+#[doc = "Gets the vcek url for the given attestation report.  You can fetch this certificate yourself, and pass it in to verify_attestation_report"]
 pub fn get_vcek_url(attestation_report: &str) -> Result<JsValue, JsValue> {
     // console::log_1(&"Getting vcek url...".into());
     utils::set_panic_hook();
@@ -41,11 +42,14 @@ pub fn get_vcek_url(attestation_report: &str) -> Result<JsValue, JsValue> {
 }
 
 #[wasm_bindgen]
-pub async fn verify_attestation_report(attestation_report: &str) -> Result<(), JsValue> {
+pub async fn verify_attestation_report(
+    attestation_report: &str,
+    veck_certificate: Vec<u8>,
+) -> Result<(), JsValue> {
     // console::log_1(&"Checking attestation report...".into());
     utils::set_panic_hook();
 
-    verify_attestation_report_inner(attestation_report).await
+    verify_attestation_report_inner(attestation_report, veck_certificate).await
 }
 
 #[wasm_bindgen]
@@ -54,6 +58,7 @@ pub async fn verify_attestation_report_and_check_challenge(
     data: JsValue,
     signatures: JsValue,
     challenge: &str,
+    veck_certificate: Vec<u8>,
 ) -> Result<(), JsValue> {
     // console::log_1(&"Checking attestation report...".into());
     utils::set_panic_hook();
@@ -68,10 +73,13 @@ pub async fn verify_attestation_report_and_check_challenge(
         return Err("Report data does not match.  This generally indicates that the data, challenge/nonce, or signatures are bad".into());
     }
 
-    verify_attestation_report_inner(attestation_report).await
+    verify_attestation_report_inner(attestation_report, veck_certificate).await
 }
 
-pub async fn verify_attestation_report_inner(attestation_report: &str) -> Result<(), JsValue> {
+pub async fn verify_attestation_report_inner(
+    attestation_report: &str,
+    veck_certificate: Vec<u8>,
+) -> Result<(), JsValue> {
     let report_bytes = base64_decode(attestation_report);
     let report: AttestationReport = unsafe { std::ptr::read(report_bytes.as_ptr() as *const _) };
 
@@ -80,16 +88,11 @@ pub async fn verify_attestation_report_inner(attestation_report: &str) -> Result
 
     let ark = milan::ark().unwrap();
     let ask = milan::ask().unwrap();
-    let vcek = amd::fetch_kds_vcek_der(
-        "Milan",
-        &utils::fmt_bin_vec_to_hex(&report.chip_id.to_vec()),
-        report.reported_tcb.bootloader,
-        report.reported_tcb.tee,
-        report.reported_tcb.snp,
-        report.reported_tcb.microcode,
-    )
-    .await
-    .expect("Could not get vcek");
+    let vcek = Certificate::from_der(&veck_certificate);
+    if let Err(e) = vcek {
+        return Err(e.to_string().into());
+    }
+    let vcek = vcek.unwrap();
 
     let ca = ca::Chain { ark, ask };
 
